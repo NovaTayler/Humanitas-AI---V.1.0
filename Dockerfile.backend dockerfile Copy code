@@ -1,21 +1,19 @@
-# ───────────────── BACKEND IMAGE ─────────────────
 FROM python:3.11-slim
 
-# System deps
-RUN apt-get update && \
-    apt-get install -y build-essential && \
-    rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    POETRY_VIRTUALENVS_CREATE=false \
+    DEBIAN_FRONTEND=noninteractive
 
-# Workdir
 WORKDIR /app
 
-# Requirements
-COPY backend/requirements.txt .
+# Install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy source
-COPY backend .
+# Copy backend code (and bots if needed)
+COPY backend /app/backend
+COPY bots /app/bots  # Remove or keep depending on your actual project needs
 
-# Expose + run
-EXPOSE 8008
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8008"]
+EXPOSE 8080
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8080"]

@@ -1,4 +1,3 @@
-# ./Dockerfile.backend
 FROM python:3.11-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -8,13 +7,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install deps
-COPY backend/requirements.txt .
+# Install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy code
+# Copy backend code (and bots if needed)
 COPY backend /app/backend
-COPY bots /app/bots  # include eBay bot
+COPY bots /app/bots  # Remove or keep depending on your actual project needs
 
 EXPOSE 8080
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8080"]

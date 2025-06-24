@@ -1,26 +1,25 @@
-name: ci-cd
+name: CI/CD Compose Push
 
 on:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_BACKEND: ${{ github.repository_owner }}/humanitas-backend
-  IMAGE_FRONTEND: ${{ github.repository_owner }}/humanitas-frontend
+  IMAGE_PREFIX: ghcr.io/${{ github.repository }}
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Log in to GHCR
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -28,35 +27,14 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.backend
+          file: Dockerfile.backend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:latest
+          tags: ${{ env.IMAGE_PREFIX }}-backend:latest
 
       - name: Build & push frontend
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile.frontend
+          file: Dockerfile.frontend
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_FRONTEND }}:latest
-
-      # --- SSH deploy ---
-      - name: Copy docker-compose.yml to server
-        uses: appleboy/scp-action@v0.1.4
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "docker-compose.yml"
-          target: "~/humanitas"
-
-      - name: Run docker compose up
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd ~/humanitas
-            docker compose pull
-            docker compose up -d --remove-orphans
+          tags: ${{ env.IMAGE_PREFIX }}-frontend:latest
